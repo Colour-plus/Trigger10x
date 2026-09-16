@@ -1584,6 +1584,239 @@ if (
 
 
 /* =========================================================
+   ARC CAROUSEL CONTROLLER (OUR APPROACH)
+   Cards ride a large circle with the focused card upright at apex.
+   Position and tilt fall out of a single rotation.
+   ========================================================= */
+
+(() => {
+
+    const stage = document.getElementById("arcCarouselStage");
+    const wheel = document.getElementById("arcCarouselWheel");
+    const prevBtn = document.getElementById("arcPrevBtn");
+    const nextBtn = document.getElementById("arcNextBtn");
+    const stepNum = document.getElementById("arcStepNum");
+    const stepName = document.getElementById("arcStepName");
+    const dotsContainer = document.getElementById("arcDots");
+
+    if (!stage || !wheel) {
+        return;
+    }
+
+    const cards = Array.from(wheel.querySelectorAll(".arc-card"));
+    const dots = dotsContainer ? Array.from(dotsContainer.querySelectorAll(".arc-dot")) : [];
+    const totalCards = cards.length;
+
+    const phaseNames = [
+        "IDENTIFY",
+        "UNDERSTAND",
+        "ANALYSE",
+        "STRATEGY",
+        "PROTOTYPE",
+        "SYSTEM",
+        "EXECUTION",
+        "SCALE"
+    ];
+
+    let currentIndex = 0;
+    let isDragging = false;
+    let startX = 0;
+    let currentDragAngle = 0;
+    let baseRotationAngle = 0;
+
+    // Helper: read current responsive step angle from CSS or viewport width
+    function getStepAngle() {
+        if (window.innerWidth <= 768) {
+            return 28;
+        }
+        if (window.innerWidth <= 1024) {
+            return 22;
+        }
+        return 18;
+    }
+
+    function updateCarousel(index, animate = true) {
+        // Clamp index between 0 and totalCards - 1
+        currentIndex = Math.max(0, Math.min(totalCards - 1, index));
+        const stepAngle = getStepAngle();
+
+        // Target rotation: The active card should sit at exactly 0deg (the apex)
+        // Since Card i is placed at (i * stepAngle), wheel must rotate by - (i * stepAngle)
+        const targetAngle = - (currentIndex * stepAngle);
+
+        if (!animate) {
+            wheel.classList.add("is-dragging");
+        } else {
+            wheel.classList.remove("is-dragging");
+        }
+
+        wheel.style.setProperty("--wheel-rotation", `${targetAngle}deg`);
+        baseRotationAngle = targetAngle;
+
+        // Update active class on cards
+        cards.forEach((card, idx) => {
+            if (idx === currentIndex) {
+                card.classList.add("active");
+                card.setAttribute("aria-current", "true");
+            } else {
+                card.classList.remove("active");
+                card.removeAttribute("aria-current");
+            }
+        });
+
+        // Update HUD pill
+        if (stepNum) {
+            stepNum.textContent = String(currentIndex + 1).padStart(2, "0");
+        }
+        if (stepName) {
+            stepName.textContent = phaseNames[currentIndex] || "PHASE";
+        }
+
+        // Update dot indicators
+        dots.forEach((dot, idx) => {
+            if (idx === currentIndex) {
+                dot.classList.add("active");
+            } else {
+                dot.classList.remove("active");
+            }
+        });
+
+        // Update button disabled states
+        if (prevBtn) {
+            prevBtn.style.opacity = currentIndex === 0 ? "0.35" : "1";
+            prevBtn.style.pointerEvents = currentIndex === 0 ? "none" : "auto";
+        }
+        if (nextBtn) {
+            nextBtn.style.opacity = currentIndex === totalCards - 1 ? "0.35" : "1";
+            nextBtn.style.pointerEvents = currentIndex === totalCards - 1 ? "none" : "auto";
+        }
+    }
+
+    // Click on any card directly to rotate it to apex
+    cards.forEach((card) => {
+        card.addEventListener("click", () => {
+            const idx = parseInt(card.getAttribute("data-index"), 10);
+            if (!isNaN(idx)) {
+                updateCarousel(idx);
+            }
+        });
+    });
+
+    // Prev / Next button clicks
+    if (prevBtn) {
+        prevBtn.addEventListener("click", () => {
+            if (currentIndex > 0) {
+                updateCarousel(currentIndex - 1);
+            }
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener("click", () => {
+            if (currentIndex < totalCards - 1) {
+                updateCarousel(currentIndex + 1);
+            }
+        });
+    }
+
+    // Dot clicks
+    dots.forEach((dot) => {
+        dot.addEventListener("click", () => {
+            const idx = parseInt(dot.getAttribute("data-index"), 10);
+            if (!isNaN(idx)) {
+                updateCarousel(idx);
+            }
+        });
+    });
+
+    // Touch and Drag Gesture Support
+    function handleDragStart(e) {
+        isDragging = true;
+        startX = e.type.includes("touch") ? e.touches[0].clientX : e.clientX;
+        currentDragAngle = baseRotationAngle;
+        wheel.classList.add("is-dragging");
+    }
+
+    function handleDragMove(e) {
+        if (!isDragging) return;
+        const currentX = e.type.includes("touch") ? e.touches[0].clientX : e.clientX;
+        const deltaX = currentX - startX;
+
+        // Convert horizontal pixels into wheel rotation degrees
+        const dragDegree = deltaX / 10;
+        const stepAngle = getStepAngle();
+        const minAngle = - ((totalCards - 1) * stepAngle) - 8;
+        const maxAngle = 8;
+
+        const prospectiveAngle = Math.max(minAngle, Math.min(maxAngle, baseRotationAngle + dragDegree));
+        wheel.style.setProperty("--wheel-rotation", `${prospectiveAngle}deg`);
+        currentDragAngle = prospectiveAngle;
+    }
+
+    function handleDragEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        wheel.classList.remove("is-dragging");
+
+        const stepAngle = getStepAngle();
+        // Determine nearest card index
+        const nearestIndex = Math.round(- currentDragAngle / stepAngle);
+        updateCarousel(nearestIndex);
+    }
+
+    stage.addEventListener("mousedown", handleDragStart);
+    window.addEventListener("mousemove", handleDragMove);
+    window.addEventListener("mouseup", handleDragEnd);
+
+    stage.addEventListener("touchstart", handleDragStart, { passive: true });
+    window.addEventListener("touchmove", handleDragMove, { passive: true });
+    window.addEventListener("touchend", handleDragEnd);
+
+    // Mouse wheel scrolling over stage
+    let wheelDebounceTimeout = null;
+    stage.addEventListener("wheel", (e) => {
+        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        if (Math.abs(delta) < 25) return;
+
+        if (wheelDebounceTimeout) return;
+
+        if (delta > 0 && currentIndex < totalCards - 1) {
+            updateCarousel(currentIndex + 1);
+        } else if (delta < 0 && currentIndex > 0) {
+            updateCarousel(currentIndex - 1);
+        }
+
+        wheelDebounceTimeout = setTimeout(() => {
+            wheelDebounceTimeout = null;
+        }, 320);
+    }, { passive: true });
+
+    // Keyboard support when approach section is in view
+    document.addEventListener("keydown", (e) => {
+        const rect = stage.getBoundingClientRect();
+        const isInView = rect.top < window.innerHeight && rect.bottom > 0;
+        if (!isInView) return;
+
+        if (e.key === "ArrowLeft" && currentIndex > 0) {
+            updateCarousel(currentIndex - 1);
+        } else if (e.key === "ArrowRight" && currentIndex < totalCards - 1) {
+            updateCarousel(currentIndex + 1);
+        }
+    });
+
+    // Window resize handler to recalculate active apex position
+    window.addEventListener("resize", () => {
+        updateCarousel(currentIndex, false);
+    });
+
+    // Initial positioning
+    updateCarousel(0, false);
+
+})();
+
+
+
+/* =========================================================
    WINDOW LOAD
 ========================================================= */
 

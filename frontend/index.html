@@ -471,135 +471,134 @@
 
 
 
-            <div class="approach reveal">
+            <!-- =====================================================
+                 ARC CAROUSEL: OUR APPROACH (01 - 08)
+                 ===================================================== -->
+            <div class="arc-carousel-wrapper reveal" id="arcCarouselWrapper">
 
+                <!-- AMBIENT APEX GLOW -->
+                <div class="arc-apex-spotlight" aria-hidden="true"></div>
 
-                <article class="card">
+                <!-- ORBIT TRACK -->
+                <div class="arc-orbit-track" aria-hidden="true"></div>
 
-                    <em>01</em>
+                <!-- STAGE -->
+                <div class="arc-carousel-stage" id="arcCarouselStage">
 
-                    <h3>
-                        Identify
-                    </h3>
+                    <!-- ROTATING WHEEL (DRIVEN BY SINGLE ROTATION) -->
+                    <div class="arc-carousel-wheel" id="arcCarouselWheel">
 
-                    <p>
-                        Find the opportunity, challenge or idea worth pursuing.
-                    </p>
+                        <article class="arc-card active" data-index="0" style="--index: 0;">
+                            <div class="arc-card-inner">
+                                <div class="arc-card-badge"><em>01</em><span>PHASE</span></div>
+                                <h3>Identify</h3>
+                                <p>Find the opportunity, challenge or idea worth pursuing.</p>
+                                <div class="arc-card-footer"><span>01 / 08</span><span class="arc-card-arrow">→</span></div>
+                            </div>
+                        </article>
 
-                </article>
+                        <article class="arc-card" data-index="1" style="--index: 1;">
+                            <div class="arc-card-inner">
+                                <div class="arc-card-badge"><em>02</em><span>PHASE</span></div>
+                                <h3>Understand</h3>
+                                <p>Understand the business, customer and context behind it.</p>
+                                <div class="arc-card-footer"><span>02 / 08</span><span class="arc-card-arrow">→</span></div>
+                            </div>
+                        </article>
 
+                        <article class="arc-card" data-index="2" style="--index: 2;">
+                            <div class="arc-card-inner">
+                                <div class="arc-card-badge"><em>03</em><span>PHASE</span></div>
+                                <h3>Analyse</h3>
+                                <p>Uncover the gaps, constraints and opportunities affecting growth.</p>
+                                <div class="arc-card-footer"><span>03 / 08</span><span class="arc-card-arrow">→</span></div>
+                            </div>
+                        </article>
 
+                        <article class="arc-card" data-index="3" style="--index: 3;">
+                            <div class="arc-card-inner">
+                                <div class="arc-card-badge"><em>04</em><span>PHASE</span></div>
+                                <h3>Strategy</h3>
+                                <p>Turn insight into a practical direction for the business.</p>
+                                <div class="arc-card-footer"><span>04 / 08</span><span class="arc-card-arrow">→</span></div>
+                            </div>
+                        </article>
 
-                <article class="card">
+                        <article class="arc-card" data-index="4" style="--index: 4;">
+                            <div class="arc-card-inner">
+                                <div class="arc-card-badge"><em>05</em><span>PHASE</span></div>
+                                <h3>Prototype</h3>
+                                <p>Give the concept form so it can be understood and evaluated.</p>
+                                <div class="arc-card-footer"><span>05 / 08</span><span class="arc-card-arrow">→</span></div>
+                            </div>
+                        </article>
 
-                    <em>02</em>
+                        <article class="arc-card" data-index="5" style="--index: 5;">
+                            <div class="arc-card-inner">
+                                <div class="arc-card-badge"><em>06</em><span>PHASE</span></div>
+                                <h3>System</h3>
+                                <p>Create processes and systems that make execution more structured.</p>
+                                <div class="arc-card-footer"><span>06 / 08</span><span class="arc-card-arrow">→</span></div>
+                            </div>
+                        </article>
 
-                    <h3>
-                        Understand
-                    </h3>
+                        <article class="arc-card" data-index="6" style="--index: 6;">
+                            <div class="arc-card-inner">
+                                <div class="arc-card-badge"><em>07</em><span>PHASE</span></div>
+                                <h3>Execution</h3>
+                                <p>Move from strategy and structure into practical implementation.</p>
+                                <div class="arc-card-footer"><span>07 / 08</span><span class="arc-card-arrow">→</span></div>
+                            </div>
+                        </article>
 
-                    <p>
-                        Understand the business, customer and context behind it.
-                    </p>
+                        <article class="arc-card" data-index="7" style="--index: 7;">
+                            <div class="arc-card-inner">
+                                <div class="arc-card-badge"><em>08</em><span>PHASE</span></div>
+                                <h3>Scale</h3>
+                                <p>Strengthen what works and build for the next stage.</p>
+                                <div class="arc-card-footer"><span>08 / 08</span><span class="arc-card-arrow">→</span></div>
+                            </div>
+                        </article>
 
-                </article>
+                    </div>
 
+                </div>
 
+                <!-- CAROUSEL HUD CONTROLS -->
+                <div class="arc-carousel-hud">
 
-                <article class="card">
+                    <button type="button" class="arc-nav-btn arc-prev-btn" id="arcPrevBtn" aria-label="Previous step">
+                        ←
+                    </button>
 
-                    <em>03</em>
+                    <div class="arc-step-pill" id="arcStepPill">
+                        <span class="arc-step-num" id="arcStepNum">01</span>
+                        <span class="arc-step-sep">/</span>
+                        <span class="arc-step-total">08</span>
+                        <span class="arc-step-name" id="arcStepName">IDENTIFY</span>
+                    </div>
 
-                    <h3>
-                        Analyse
-                    </h3>
+                    <button type="button" class="arc-nav-btn arc-next-btn" id="arcNextBtn" aria-label="Next step">
+                        →
+                    </button>
 
-                    <p>
-                        Uncover the gaps, constraints and opportunities affecting growth.
-                    </p>
+                </div>
 
-                </article>
+                <!-- DOT INDICATORS -->
+                <div class="arc-dots" id="arcDots">
+                    <button type="button" class="arc-dot active" data-index="0" aria-label="Step 1"></button>
+                    <button type="button" class="arc-dot" data-index="1" aria-label="Step 2"></button>
+                    <button type="button" class="arc-dot" data-index="2" aria-label="Step 3"></button>
+                    <button type="button" class="arc-dot" data-index="3" aria-label="Step 4"></button>
+                    <button type="button" class="arc-dot" data-index="4" aria-label="Step 5"></button>
+                    <button type="button" class="arc-dot" data-index="5" aria-label="Step 6"></button>
+                    <button type="button" class="arc-dot" data-index="6" aria-label="Step 7"></button>
+                    <button type="button" class="arc-dot" data-index="7" aria-label="Step 8"></button>
+                </div>
 
-
-
-                <article class="card">
-
-                    <em>04</em>
-
-                    <h3>
-                        Strategy
-                    </h3>
-
-                    <p>
-                        Turn insight into a practical direction for the business.
-                    </p>
-
-                </article>
-
-
-
-                <article class="card">
-
-                    <em>05</em>
-
-                    <h3>
-                        Prototype
-                    </h3>
-
-                    <p>
-                        Give the concept form so it can be understood and evaluated.
-                    </p>
-
-                </article>
-
-
-
-                <article class="card">
-
-                    <em>06</em>
-
-                    <h3>
-                        System
-                    </h3>
-
-                    <p>
-                        Create processes and systems that make execution more structured.
-                    </p>
-
-                </article>
-
-
-
-                <article class="card">
-
-                    <em>07</em>
-
-                    <h3>
-                        Execution
-                    </h3>
-
-                    <p>
-                        Move from strategy and structure into practical implementation.
-                    </p>
-
-                </article>
-
-
-
-                <article class="card">
-
-                    <em>08</em>
-
-                    <h3>
-                        Scale
-                    </h3>
-
-                    <p>
-                        Strengthen what works and build for the next stage.
-                    </p>
-
-                </article>
-
+                <div class="arc-drag-hint">
+                    <span>Drag or click to advance through the 10X journey</span>
+                </div>
 
             </div>
 

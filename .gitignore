@@ -29,8 +29,7 @@ desktop.ini
 *.sublime-project
 *.sublime-workspace
 
-# Build / Temp
-dist/
-build/
+# Temporary files
+reference_video.mp4
 *.tmp
 *.temp
