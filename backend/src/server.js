@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const app = require("./app");
 const pool = require("./config/database");
+const { verifyEmailConfig } = require("./services/emailService");
 
 /*
 ==================================================
@@ -26,6 +27,9 @@ const server = app.listen(
         console.log(
             `TRIGGER10X backend running on http://localhost:${PORT}`
         );
+
+        // Verify email notification credentials asynchronously
+        verifyEmailConfig().catch(() => {});
 
     }
 );
