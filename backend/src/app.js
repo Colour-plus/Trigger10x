@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -25,7 +26,12 @@ SECURITY
 ==================================================
 */
 
-app.use(helmet());
+app.use(
+    helmet({
+        contentSecurityPolicy: false,
+        crossOriginEmbedderPolicy: false
+    })
+);
 
 
 /*
@@ -34,9 +40,13 @@ CORS
 ==================================================
 */
 
+const PORT = Number(process.env.PORT) || 5000;
+
 const allowedOrigins = [
     "http://localhost:5500",
-    "http://127.0.0.1:5500"
+    "http://127.0.0.1:5500",
+    `http://localhost:${PORT}`,
+    `http://127.0.0.1:${PORT}`
 ];
 
 if (process.env.FRONTEND_URL) {
@@ -160,21 +170,55 @@ app.use(
 
 /*
 ==================================================
-404 HANDLER
+SERVE FRONTEND STATIC FILES & ROUTES
+==================================================
+*/
+
+const frontendPath =
+    path.join(__dirname, "..", "..", "frontend");
+
+app.use(
+    express.static(frontendPath)
+);
+
+// Explicit route for Privacy Policy page
+app.get(
+    "/privacy-policy",
+    (req, res) => {
+        res.sendFile(
+            path.join(frontendPath, "privacy-policy.html")
+        );
+    }
+);
+
+
+/*
+==================================================
+404 / SPA FALLBACK
 ==================================================
 */
 
 app.use(
     (req, res) => {
 
-        res.status(404).json({
+        // API routes → JSON 404
+        if (req.path.startsWith("/api")) {
 
-            success: false,
+            return res.status(404).json({
 
-            message:
-                "The requested resource was not found."
+                success: false,
 
-        });
+                message:
+                    "The requested resource was not found."
+
+            });
+
+        }
+
+        // Everything else → serve the frontend index
+        res.sendFile(
+            path.join(frontendPath, "index.html")
+        );
 
     }
 );

@@ -324,6 +324,58 @@
 
 
     /* -----------------------------------------------------
+       Skip triggers (Button, Click, Keyboard)
+    ----------------------------------------------------- */
+
+    const introSkipBtn =
+        document.getElementById("intro-skip");
+
+    if (introSkipBtn) {
+
+        introSkipBtn.addEventListener(
+            "click",
+            (event) => {
+
+                event.stopPropagation();
+                completeIntro();
+
+            }
+        );
+
+    }
+
+    introScreen.addEventListener(
+        "click",
+        () => {
+
+            completeIntro();
+
+        }
+    );
+
+    const onKeyDismiss = (event) => {
+
+        if (
+            event.key === "Escape" ||
+            event.key === " "
+        ) {
+
+            completeIntro();
+            window.removeEventListener(
+                "keydown",
+                onKeyDismiss
+            );
+
+        }
+
+    };
+
+    window.addEventListener(
+        "keydown",
+        onKeyDismiss
+    );
+
+    /* -----------------------------------------------------
        Safety fallback
     ----------------------------------------------------- */
 
@@ -1109,17 +1161,11 @@ if (
 
 (() => {
 
-    const isLocalhost =
-        window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1";
-
-    // In local development, points to localhost:5000.
-    // When deploying live, update PRODUCTION_API_URL or define window.TRIGGER10X_API_URL.
-    const PRODUCTION_API_URL = "https://your-backend-api.onrender.com";
-
-    const API_BASE_URL = isLocalhost
-        ? "http://localhost:5000"
-        : (window.TRIGGER10X_API_URL || PRODUCTION_API_URL);
+    // Dynamically target backend whether on port 5000 or port 5500
+    const API_BASE_URL =
+        window.location.port === "5000" || (!window.location.port && window.location.protocol.startsWith("http") && !window.location.hostname.includes("localhost"))
+            ? ""
+            : "http://localhost:5000";
 
 
     const enquiryForm =
@@ -1828,25 +1874,136 @@ if (
     const heroCopy = hero.querySelector(".hero-copy");
     const aboutBg = about.querySelector(".about-bg");
     const revealItems = about.querySelectorAll(".about-reveal-item");
+    const lineMasks = about.querySelectorAll(".about-line-mask");
+    const goldSpine = about.querySelector(".about-gold-spine");
+
+    const leftCol = about.querySelector(".about-left-col");
+    const eyebrow = about.querySelector(".about-eyebrow");
+    const leadStmt = about.querySelector(".about-lead-statement");
+    const narrative = about.querySelector(".about-narrative-body");
+    const aboutContent = about.querySelector(".about-content") || about;
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        if (leftCol) leftCol.classList.add("is-revealed");
+        if (eyebrow) eyebrow.classList.add("is-revealed");
+        lineMasks.forEach(mask => mask.classList.add("is-revealed"));
+        if (goldSpine) goldSpine.classList.add("is-revealed");
+        if (leadStmt) leadStmt.classList.add("is-revealed");
+        if (narrative) narrative.classList.add("is-revealed");
         revealItems.forEach(item => item.classList.add("is-revealed"));
         return;
     }
 
+    let isRevealedState = false;
+    let revealTimeouts = [];
 
-    // IntersectionObserver for the About section content reveal
+    function clearRevealTimeouts() {
+        revealTimeouts.forEach(t => clearTimeout(t));
+        revealTimeouts = [];
+    }
+
+    function triggerAboutReveal(forceReset = false) {
+        if (forceReset) {
+            clearRevealTimeouts();
+            isRevealedState = false;
+            if (leftCol) leftCol.classList.remove("is-revealed");
+            if (eyebrow) eyebrow.classList.remove("is-revealed");
+            lineMasks.forEach(mask => mask.classList.remove("is-revealed"));
+            if (goldSpine) goldSpine.classList.remove("is-revealed");
+            if (leadStmt) leadStmt.classList.remove("is-revealed");
+            if (narrative) narrative.classList.remove("is-revealed");
+            revealItems.forEach(item => item.classList.remove("is-revealed"));
+            return;
+        }
+
+        if (isRevealedState) return;
+        isRevealedState = true;
+        clearRevealTimeouts();
+
+        // Staggered choreography that feels fluid & cinematic
+        // Step 1: Left column marker and eyebrow kicker
+        revealTimeouts.push(setTimeout(() => {
+            if (leftCol) leftCol.classList.add("is-revealed");
+            if (eyebrow) eyebrow.classList.add("is-revealed");
+        }, 60));
+
+        // Step 2: Headline Line 1 upward roll
+        revealTimeouts.push(setTimeout(() => {
+            if (lineMasks[0]) lineMasks[0].classList.add("is-revealed");
+        }, 160));
+
+        // Step 3: Headline Line 2 upward roll & gold spine drop
+        revealTimeouts.push(setTimeout(() => {
+            if (lineMasks[1]) lineMasks[1].classList.add("is-revealed");
+            if (goldSpine) goldSpine.classList.add("is-revealed");
+        }, 320));
+
+        // Step 4: Lead statement glide
+        revealTimeouts.push(setTimeout(() => {
+            if (leadStmt) leadStmt.classList.add("is-revealed");
+        }, 460));
+
+        // Step 5: Narrative body glide
+        revealTimeouts.push(setTimeout(() => {
+            if (narrative) narrative.classList.add("is-revealed");
+        }, 600));
+    }
+
+    // IntersectionObserver for About content reveal
     const aboutObserver = new IntersectionObserver(
         (entries) => {
             entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    revealItems.forEach((item) => item.classList.add("is-revealed"));
+                if (entry.isIntersecting && entry.intersectionRatio >= 0.18) {
+                    triggerAboutReveal(false);
+                } else if (!entry.isIntersecting && entry.boundingClientRect.top > 0) {
+                    // Reset when user scrolls back above the section so it replays smoothly
+                    triggerAboutReveal(true);
                 }
             });
         },
-        { threshold: 0.15 }
+        {
+            threshold: [0, 0.18, 0.35],
+            rootMargin: "0px 0px -40px 0px"
+        }
     );
-    aboutObserver.observe(about);
+    aboutObserver.observe(aboutContent);
+
+    // Initial check on load in case page is refreshed or opened at About
+    const initRect = aboutContent.getBoundingClientRect();
+    if (initRect.top < window.innerHeight * 0.75 && initRect.bottom > 100) {
+        setTimeout(() => triggerAboutReveal(false), 200);
+    }
+
+    // Re-trigger reveal when clicking any About navigation link
+    document.querySelectorAll('a[href="#about"]').forEach(link => {
+        link.addEventListener("click", () => {
+            triggerAboutReveal(true);
+            setTimeout(() => triggerAboutReveal(false), 320);
+        });
+    });
+
+    // Subtle 3D mouse parallax on About section (desktop only)
+    if (window.matchMedia("(min-width: 1024px)").matches) {
+        about.addEventListener("mousemove", (e) => {
+            const rect = about.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width - 0.5;
+            const y = (e.clientY - rect.top) / rect.height - 0.5;
+
+            const headline = about.querySelector(".about-stylish-headline");
+            if (headline) {
+                headline.style.transform = `translate3d(${(x * 10).toFixed(1)}px, ${(y * 6).toFixed(1)}px, 0)`;
+                headline.style.transition = "transform 0.1s ease-out";
+            }
+        }, { passive: true });
+
+        about.addEventListener("mouseleave", () => {
+            const headline = about.querySelector(".about-stylish-headline");
+            if (headline) {
+                headline.style.transform = "translate3d(0, 0, 0)";
+                headline.style.transition = "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)";
+            }
+        });
+    }
 
     // High-performance scroll parallax engine
     let ticking = false;
@@ -2050,103 +2207,184 @@ if (
 
 
 /* =========================================================
-   3D CYLINDRICAL RING SLIDER CONTROLLER ("INDUSTRIES")
-   Interactive 3D cylinder with drag, momentum physics,
-   visible far-side cards through gaps, snap-to-card,
-   and HUD synchronization.
+   PROJECTED-SPACE CONCAVE 3D RING GALLERY CONTROLLER ("INDUSTRIES")
+   Portrait cards on a 3D ring curling around the viewer.
+   Recessed and smallest in the middle; edges curl forward and lean inward.
+   Screen gaps are solved in projected space for strictly uniform spacing.
 ========================================================= */
 
 (() => {
-    const stage = document.getElementById("cylinderStage");
-    const ring = document.getElementById("cylinderRing");
+    const stage = document.getElementById("curvedStage");
+    const ring = document.getElementById("curvedRing");
     if (!stage || !ring) return;
 
-    const cards = Array.from(ring.querySelectorAll(".cylinder-card"));
+    const cards = Array.from(ring.querySelectorAll(".curved-card"));
     if (!cards.length) return;
 
     const totalCards = cards.length;
-    const stepAngle = 360 / totalCards; // 60 degrees for 6 cards
+    const hudCount = document.getElementById("curvedHudCount");
+    const hudTitle = document.getElementById("curvedHudTitle");
+    const prevBtn = document.getElementById("curvedPrevBtn");
+    const nextBtn = document.getElementById("curvedNextBtn");
+    const dotBtns = Array.from(document.querySelectorAll(".curved-dot"));
 
-    const industryNames = cards.map(c => c.getAttribute("data-title") || "Industry");
+    const titles = cards.map(c => c.getAttribute("data-title") || "Industry");
 
-    // Dynamic radius calculation based on stage width
-    const getRadius = () => {
+    // Dynamic geometry tuned for strictly uniform screen gaps & concave forward curling
+    const getGeometry = () => {
         const w = window.innerWidth;
-        if (w <= 600) return 170;
-        if (w <= 900) return 215;
-        return 260;
+        if (w <= 480) {
+            return { gap: 195, zForward: 140, thetaMax: 24, sMin: 0.85, sMax: 1.04 };
+        }
+        if (w <= 768) {
+            return { gap: 230, zForward: 165, thetaMax: 26, sMin: 0.86, sMax: 1.05 };
+        }
+        if (w <= 1024) {
+            return { gap: 260, zForward: 185, thetaMax: 28, sMin: 0.87, sMax: 1.05 };
+        }
+        return { gap: 290, zForward: 215, thetaMax: 30, sMin: 0.86, sMax: 1.06 };
     };
 
-    let currentRadius = getRadius();
+    let currentPos = 0;
+    let targetPos = 0;
+    let activeIndex = 0;
+    let animFrame = null;
 
-    // Position cards around 3D ring
-    const layoutCards = () => {
-        currentRadius = getRadius();
-        cards.forEach((card, i) => {
-            const baseAngle = i * stepAngle;
-            card.style.transform = "rotateY(" + baseAngle + "deg) translateZ(" + currentRadius + "px)";
+    // Update HUD counters, title, and active dot
+    const updateHUD = (nearestIdx) => {
+        if (hudCount) {
+            hudCount.textContent = `0${nearestIdx + 1} / 0${totalCards}`;
+        }
+        if (hudTitle) {
+            hudTitle.textContent = titles[nearestIdx];
+        }
+        dotBtns.forEach((dot, idx) => {
+            const isActive = idx === nearestIdx;
+            dot.classList.toggle("active", isActive);
+            dot.setAttribute("aria-selected", isActive ? "true" : "false");
         });
     };
 
-    layoutCards();
-    window.addEventListener("resize", layoutCards);
+    // Render cards using Projected-Space Inverse Mapping
+    const renderGallery = (pos) => {
+        const geo = getGeometry();
+        const N = totalCards;
 
-    let currentRotation = 0;
-    let targetRotation = 0;
-    let activeIndex = 0;
-
-    const updateRingTransform = (rot) => {
-        ring.style.transform = "rotateX(-7deg) rotateY(" + rot + "deg)";
-    };
-
-    const updateActiveStates = () => {
-        // Calculate which card is closest to front (angle closest to 0 mod 360)
-        const normalized = ((-currentRotation % 360) + 360) % 360;
-        const nearestIdx = Math.round(normalized / stepAngle) % totalCards;
+        // Wrap current active index into [0, N-1]
+        const nearestIdx = ((Math.round(pos) % N) + N) % N;
         activeIndex = nearestIdx;
 
         cards.forEach((card, i) => {
-            const isActive = i === activeIndex;
-            card.classList.toggle("active", isActive);
-            card.setAttribute("aria-selected", isActive ? "true" : "false");
+            // Signed cyclic delta in range [-N/2, +N/2]
+            let delta = ((i - pos) % N + N * 1.5) % N - N / 2;
+
+            // 1. PROJECTED SCREEN-SPACE X:
+            // Strictly linear delta * gap ensures constant visual spacing across screen!
+            const xProj = delta * geo.gap;
+
+            // 2. CONCAVE 3D RING DEPTH (CURLS FORWARD AROUND VIEWER):
+            // Center (delta = 0) is recessed back; flanks sweep forward towards camera
+            const absDelta = Math.abs(delta);
+            const normX = Math.min(absDelta / (N / 2), 1.0);
+            const zVal = Math.pow(normX, 1.45) * geo.zForward;
+
+            // 3. SMALLEST IN THE MIDDLE:
+            // Center is compact & focused; edges scale up as they curl forward
+            const scale = geo.sMin + (geo.sMax - geo.sMin) * Math.pow(normX, 1.15);
+
+            // 4. LEANING IN AT BOTH EDGES:
+            // Left cards (delta < 0) rotate clockwise (+Y); Right cards (delta > 0) rotate counter-clockwise (-Y)
+            const sign = delta < 0 ? -1 : (delta > 0 ? 1 : 0);
+            const rotY = -sign * geo.thetaMax * Math.pow(normX, 0.85);
+
+            // Subtle vertical amphitheater pitch and roll cant
+            const rotX = -3.5;
+            const rotZ = -sign * Math.pow(normX, 1.2) * 2;
+
+            // 5. OPACITY / VISIBILITY:
+            let opacity = 1;
+            if (absDelta > 2.0) {
+                opacity = Math.max(0, 1 - (absDelta - 2.0) / 0.8);
+            }
+
+            if (opacity <= 0.02) {
+                card.style.visibility = "hidden";
+                card.style.pointerEvents = "none";
+            } else {
+                card.style.visibility = "visible";
+                card.style.pointerEvents = "auto";
+            }
+
+            // Apply 3D composite transform
+            card.style.transform = `translate3d(${xProj.toFixed(2)}px, 0, ${zVal.toFixed(2)}px) rotateX(${rotX}deg) rotateY(${rotY.toFixed(2)}deg) rotateZ(${rotZ.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+            card.style.opacity = opacity.toFixed(3);
+
+            // Z-Index ordering so advancing edge cards properly layer with center card
+            const isApex = absDelta < 0.45;
+            card.style.zIndex = Math.round(100 + zVal);
+
+            card.classList.toggle("active", isApex);
+            card.setAttribute("aria-selected", isApex ? "true" : "false");
         });
+
+        updateHUD(nearestIdx);
     };
 
-    // Smooth spring/lerp to target angle
-    let animFrame = null;
+    // Smooth spring / lerp animation loop
     const animateToTarget = () => {
-        const diff = targetRotation - currentRotation;
-        if (Math.abs(diff) > 0.05) {
-            currentRotation += diff * 0.12;
-            updateRingTransform(currentRotation);
-            updateActiveStates();
+        const diff = targetPos - currentPos;
+        if (Math.abs(diff) > 0.002) {
+            currentPos += diff * 0.14; // smooth fluid damping
+            renderGallery(currentPos);
             animFrame = requestAnimationFrame(animateToTarget);
         } else {
-            currentRotation = targetRotation;
-            updateRingTransform(currentRotation);
-            updateActiveStates();
+            currentPos = targetPos;
+            renderGallery(currentPos);
             animFrame = null;
         }
     };
 
-    const rotateToIndex = (index) => {
+    const goToIndex = (idx) => {
         if (animFrame) cancelAnimationFrame(animFrame);
-        // Find shortest angular path to target index
-        const currentNorm = ((-currentRotation % 360) + 360) % 360;
-        const targetNorm = index * stepAngle;
-        let delta = currentNorm - targetNorm;
-        if (delta > 180) delta -= 360;
-        if (delta < -180) delta += 360;
+        const N = totalCards;
+        const currentNorm = ((currentPos % N) + N) % N;
+        let delta = idx - currentNorm;
+        if (delta > N / 2) delta -= N;
+        if (delta < -N / 2) delta += N;
 
-        targetRotation = currentRotation + delta;
+        targetPos = currentPos + delta;
         animateToTarget();
     };
 
-    // Direct card click: click any card to spin it to the front
+    // Click direct card to bring it to center
     cards.forEach((card, idx) => {
         card.addEventListener("click", () => {
-            if (isDraggingDistance > 8) return; // Ignore clicks resulting from a drag gesture
-            rotateToIndex(idx);
+            if (isDraggingDistance > 8) return; // Prevent click on drag release
+            goToIndex(idx);
+        });
+    });
+
+    // HUD Button Controls
+    if (prevBtn) {
+        prevBtn.addEventListener("click", () => {
+            if (animFrame) cancelAnimationFrame(animFrame);
+            targetPos = Math.round(currentPos) - 1;
+            animateToTarget();
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener("click", () => {
+            if (animFrame) cancelAnimationFrame(animFrame);
+            targetPos = Math.round(currentPos) + 1;
+            animateToTarget();
+        });
+    }
+
+    // Dot indicators click
+    dotBtns.forEach((dot, idx) => {
+        dot.addEventListener("click", () => {
+            goToIndex(idx);
         });
     });
 
@@ -2180,17 +2418,17 @@ if (
 
         isDraggingDistance += Math.abs(deltaX);
 
-        // Sensitivity factor: ~0.24 degrees per pixel
-        const sensitivity = 0.24;
-        currentRotation += deltaX * sensitivity;
-        targetRotation = currentRotation;
+        // Map drag pixels directly through gap geometry: 1 gap = 1 card index
+        const geo = getGeometry();
+        const sensitivity = 1 / geo.gap;
+        currentPos -= deltaX * sensitivity;
+        targetPos = currentPos;
 
-        velocity = (deltaX / dt) * 14; // pixels per ms to angle velocity
+        velocity = -(deltaX / dt) * 16 * sensitivity;
         lastX = currentX;
         lastTime = now;
 
-        updateRingTransform(currentRotation);
-        updateActiveStates();
+        renderGallery(currentPos);
     });
 
     const onPointerRelease = (e) => {
@@ -2201,25 +2439,23 @@ if (
             stage.releasePointerCapture(e.pointerId);
         } catch (_) {}
 
-        // Inertia momentum with friction decay
+        // Inertia momentum with friction damping
         const runInertia = () => {
-            if (Math.abs(velocity) > 0.08) {
-                velocity *= 0.92; // Friction damping
-                currentRotation += velocity;
-                updateRingTransform(currentRotation);
-                updateActiveStates();
+            if (Math.abs(velocity) > 0.005) {
+                velocity *= 0.91;
+                currentPos += velocity;
+                renderGallery(currentPos);
                 animFrame = requestAnimationFrame(runInertia);
             } else {
-                // Snap to nearest card
-                targetRotation = Math.round(currentRotation / stepAngle) * stepAngle;
+                targetPos = Math.round(currentPos);
                 animateToTarget();
             }
         };
 
-        if (Math.abs(velocity) > 0.3) {
+        if (Math.abs(velocity) > 0.02) {
             animFrame = requestAnimationFrame(runInertia);
         } else {
-            targetRotation = Math.round(currentRotation / stepAngle) * stepAngle;
+            targetPos = Math.round(currentPos);
             animateToTarget();
         }
     };
@@ -2227,7 +2463,7 @@ if (
     stage.addEventListener("pointerup", onPointerRelease);
     stage.addEventListener("pointercancel", onPointerRelease);
 
-    // Keyboard navigation when industries section is in view
+    // Keyboard Navigation
     document.addEventListener("keydown", (e) => {
         const rect = stage.getBoundingClientRect();
         const inView = rect.top < window.innerHeight && rect.bottom > 0;
@@ -2235,93 +2471,87 @@ if (
 
         if (e.key === "ArrowLeft") {
             if (animFrame) cancelAnimationFrame(animFrame);
-            targetRotation = Math.round(currentRotation / stepAngle) * stepAngle + stepAngle;
+            targetPos = Math.round(currentPos) - 1;
             animateToTarget();
         } else if (e.key === "ArrowRight") {
             if (animFrame) cancelAnimationFrame(animFrame);
-            targetRotation = Math.round(currentRotation / stepAngle) * stepAngle - stepAngle;
+            targetPos = Math.round(currentPos) + 1;
             animateToTarget();
         }
     });
 
-    // ---------------------------------------------------------
-    // Scroll & Wheel Driven 3D Cylinder Spinning
-    // ---------------------------------------------------------
+    // Mouse Wheel / Trackpad Scroll on Industries Section
     const industriesSection = document.getElementById("industries") || stage;
-    let lastScrollY = window.scrollY;
-    let scrollSnapTimer = null;
     let isWheelActive = false;
     let wheelTimer = null;
+    let scrollSnapTimer = null;
 
-    // 1. Direct Mouse Wheel / Trackpad Scroll on Industries Section
     industriesSection.addEventListener("wheel", (e) => {
-        const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-        if (Math.abs(delta) < 1) return;
+        const delta = Math.abs(e.deltaX) >= Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        if (Math.abs(delta) < 2) return;
 
         isWheelActive = true;
         clearTimeout(wheelTimer);
         wheelTimer = setTimeout(() => {
             isWheelActive = false;
-        }, 160);
+        }, 180);
 
         if (animFrame) cancelAnimationFrame(animFrame);
 
-        // Scroll down (delta > 0) -> rotates forward; scroll up -> rotates back
-        const wheelSensitivity = 0.28;
-        targetRotation -= delta * wheelSensitivity;
-        currentRotation = targetRotation;
-        updateRingTransform(currentRotation);
-        updateActiveStates();
+        const wheelFactor = 0.0024;
+        targetPos += delta * wheelFactor;
+        currentPos = targetPos;
+        renderGallery(currentPos);
 
-        // Snap to nearest card when wheel interaction pauses
         clearTimeout(scrollSnapTimer);
         scrollSnapTimer = setTimeout(() => {
             if (!isPointerDown) {
-                targetRotation = Math.round(currentRotation / stepAngle) * stepAngle;
-                animateToTarget();
-            }
-        }, 200);
-    }, { passive: true });
-
-    // 2. Global Page Scroll Coupling: spins as user scrolls down/up the page through the section
-    window.addEventListener("scroll", () => {
-        const currentScrollY = window.scrollY;
-        const deltaY = currentScrollY - lastScrollY;
-        lastScrollY = currentScrollY;
-
-        // Skip if pointer dragging or if direct wheel on section is already driving
-        if (isPointerDown || isWheelActive) return;
-
-        // Ignore large jumps (e.g., page navigation, anchor link jumps)
-        if (Math.abs(deltaY) > 200) return;
-
-        const rect = stage.getBoundingClientRect();
-        const winH = window.innerHeight || document.documentElement.clientHeight;
-        const inView = rect.bottom > 40 && rect.top < winH - 40;
-        if (!inView) return;
-
-        if (animFrame) cancelAnimationFrame(animFrame);
-
-        // Page scroll sensitivity: ~1 full 360deg spin across viewport journey
-        const scrollFactor = 0.26;
-        targetRotation -= deltaY * scrollFactor;
-        currentRotation = targetRotation;
-        updateRingTransform(currentRotation);
-        updateActiveStates();
-
-        // Snap to nearest card after scrolling settles
-        clearTimeout(scrollSnapTimer);
-        scrollSnapTimer = setTimeout(() => {
-            if (!isPointerDown && !isWheelActive) {
-                targetRotation = Math.round(currentRotation / stepAngle) * stepAngle;
+                targetPos = Math.round(currentPos);
                 animateToTarget();
             }
         }, 220);
     }, { passive: true });
 
-    // Initialize position and front card
-    updateRingTransform(0);
-    updateActiveStates();
+    // Global Page Scroll Coupling (gentle turn while user journeys past section)
+    let lastScrollY = window.scrollY;
+    window.addEventListener("scroll", () => {
+        if (window.innerWidth <= 768) return; // Keep mobile touch scrolling clean and unhindered
+
+        const currentScrollY = window.scrollY;
+        const deltaY = currentScrollY - lastScrollY;
+        lastScrollY = currentScrollY;
+
+        if (isPointerDown || isWheelActive) return;
+        if (Math.abs(deltaY) > 180) return;
+
+        const rect = stage.getBoundingClientRect();
+        const winH = window.innerHeight || document.documentElement.clientHeight;
+        const inView = rect.bottom > 60 && rect.top < winH - 60;
+        if (!inView) return;
+
+        if (animFrame) cancelAnimationFrame(animFrame);
+
+        const pageScrollFactor = 0.0016;
+        targetPos += deltaY * pageScrollFactor;
+        currentPos = targetPos;
+        renderGallery(currentPos);
+
+        clearTimeout(scrollSnapTimer);
+        scrollSnapTimer = setTimeout(() => {
+            if (!isPointerDown && !isWheelActive) {
+                targetPos = Math.round(currentPos);
+                animateToTarget();
+            }
+        }, 240);
+    }, { passive: true });
+
+    // Window resize recalculation
+    window.addEventListener("resize", () => {
+        renderGallery(currentPos);
+    });
+
+    // Initial render
+    renderGallery(0);
 })();
 
 /* =========================================================
@@ -2433,6 +2663,655 @@ if (
 })();
 
 /* =========================================================
+   INSIGHTS SECTION ANIMATION OBSERVER
+   ========================================================= */
+(() => {
+    const insights = document.getElementById("insights");
+    if (!insights) return;
+
+    const masks = insights.querySelectorAll(".insights-line-mask");
+    const spine = insights.querySelector(".insights-gold-spine");
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        masks.forEach(m => m.classList.add("is-revealed"));
+        if (spine) spine.classList.add("is-revealed");
+        return;
+    }
+
+    const obs = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                if (spine) spine.classList.add("is-revealed");
+                masks.forEach((mask, idx) => {
+                    setTimeout(() => mask.classList.add("is-revealed"), 60 + idx * 120);
+                });
+            }
+        });
+    }, { threshold: 0.15 });
+
+    obs.observe(insights);
+})();
+
+/* =========================================================
+   BLUEPRINT DRAWER CONTROLLER: BUSINESS SERVICES ARCHITECTURE
+   Handles opening/closing of the slide-in architectural
+   obsidian glass blueprint drawer from the right edge,
+   with dynamic switching between Business Development &
+   Business Enhancement service pathways.
+========================================================= */
+(() => {
+    const drawer = document.getElementById("blueprintDrawer");
+    const overlay = document.getElementById("blueprintOverlay");
+    const closeBtn = document.getElementById("blueprintCloseBtn");
+    const triggers = document.querySelectorAll(".blueprint-trigger");
+    const ctaBtn = document.getElementById("blueprintCtaBtn");
+
+    if (!drawer || !overlay) return;
+
+    // Domain-specific service blueprint data definitions
+    const serviceBlueprints = {
+        "business-development": {
+            num: "01",
+            tag: "CAPABILITIES // 01",
+            domain: "BUSINESS DEVELOPMENT",
+            title: "Business Development <span>Services.</span>",
+            lead: "A disciplined 5-stage strategic engagement model to analyze, structure, and convert market potential into high-velocity commercial growth.",
+            footerHeading: "Ready to trigger your next 10X growth phase?",
+            footerSub: "Discuss your business development requirements directly with our strategic team.",
+            steps: [
+                {
+                    num: "01",
+                    phase: "PHASE 01 // DIAGNOSTIC",
+                    title: "Analyse the Business",
+                    desc: "We analyse your business, market, customers and opportunities to identify potential areas for growth.",
+                    metrics: ["Market Viability", "Customer Segments", "Opportunity Mapping"]
+                },
+                {
+                    num: "02",
+                    phase: "PHASE 02 // ARCHITECTURE",
+                    title: "Build the Framework",
+                    desc: "We create a clear framework that gives direction to the identified opportunities and growth possibilities.",
+                    metrics: ["Growth Framework", "Value Horizons", "Resource Allocation"]
+                },
+                {
+                    num: "03",
+                    phase: "PHASE 03 // STRATEGY",
+                    title: "Develop the Strategies",
+                    desc: "We develop practical strategies based on the business goals, opportunities and market potential.",
+                    metrics: ["Commercial Roadmaps", "Competitive Edge", "Revenue Streams"]
+                },
+                {
+                    num: "04",
+                    phase: "PHASE 04 // ACTIVATION",
+                    title: "Idea to Execution",
+                    desc: "We turn the strategies into clear ideas and an execution pathway that your team can take forward.",
+                    metrics: ["Operational Playbooks", "Actionable Milestones", "Team Workstreams"]
+                },
+                {
+                    num: "05",
+                    phase: "PHASE 05 // CLIENT EXECUTION",
+                    title: "Execution at Your End",
+                    desc: "We provide the ideas, framework and strategic direction; the actual execution is carried out by your team.",
+                    metrics: ["Strategic Direction", "Framework & Ideas", "Internal Team Execution"]
+                }
+            ]
+        },
+        "business-enhancement": {
+            num: "02",
+            tag: "CAPABILITIES // 02",
+            domain: "BUSINESS ENHANCEMENT",
+            title: "Business Enhancement <span>Services.</span>",
+            lead: "A comprehensive 5-phase optimization framework to diagnose, fortify, and scale existing operations, customer journeys, and commercial performance.",
+            footerHeading: "Ready to elevate your existing business?",
+            footerSub: "Discuss your business enhancement goals directly with our strategic team.",
+            steps: [
+                {
+                    num: "01",
+                    phase: "PHASE 01 // AUDIT & DIAGNOSTIC",
+                    title: "Analyse the Existing Business",
+                    desc: "We study your current business, processes, offerings and performance to identify areas that can be improved.",
+                    metrics: ["Process Audit", "Performance Review", "Offering Assessment"]
+                },
+                {
+                    num: "02",
+                    phase: "PHASE 02 // GAP DISCOVERY",
+                    title: "Identify Improvement Opportunities",
+                    desc: "We identify gaps, challenges and opportunities that can help strengthen and improve the existing business.",
+                    metrics: ["Friction Analysis", "Untapped Potential", "Operational Bottlenecks"]
+                },
+                {
+                    num: "03",
+                    phase: "PHASE 03 // STRATEGIC REFINEMENT",
+                    title: "Develop Enhancement Strategies",
+                    desc: "We create strategies to improve your business model, offerings, customer experience, positioning and overall potential.",
+                    metrics: ["Model Innovation", "CX Optimization", "Strategic Positioning"]
+                },
+                {
+                    num: "04",
+                    phase: "PHASE 04 // ARCHITECTURE & ROADMAP",
+                    title: "Build the Enhancement Framework",
+                    desc: "We structure the ideas and strategies into a clear framework that shows what can be improved and how it can be approached.",
+                    metrics: ["Enhancement Matrix", "Priority Roadmap", "Structured Playbook"]
+                },
+                {
+                    num: "05",
+                    phase: "PHASE 05 // COMPLETE EXECUTION & ROLLOUT",
+                    title: "Execution at Our End",
+                    desc: "Execution is driven directly at our end — providing full, hands-on support from foundational basics and market opportunity capture to high-impact ads execution, creative campaigns, and continuous operational scaling.",
+                    metrics: ["Execution at Our End", "Foundational Basics", "Market Opportunities", "Ads & Campaign Execution"]
+                }
+            ]
+        },
+        "strategy-gtm": {
+            num: "03",
+            tag: "CAPABILITIES // 03",
+            domain: "STRATEGY & GTM",
+            title: "Strategy & GTM <span>Services.</span>",
+            lead: "Turn ambition into a clear market direction, defensible competitive positioning, and a coordinated go-to-market commercial engine.",
+            footerHeading: "Ready to launch and scale your go-to-market engine?",
+            footerSub: "Discuss your commercial launch strategy directly with our strategic team.",
+            steps: [
+                {
+                    num: "01",
+                    phase: "PHASE 01 // INTELLIGENCE & MARKET",
+                    title: "Understand the Business & Market",
+                    desc: "We analyse your business, target market, customers and competition to establish the right strategic direction.",
+                    metrics: ["Business Analysis", "Target Market", "Competitive Direction"]
+                },
+                {
+                    num: "02",
+                    phase: "PHASE 02 // POSITIONING",
+                    title: "Define the Positioning",
+                    desc: "We define how your business, product or service should be positioned and presented to the right audience.",
+                    metrics: ["Brand Positioning", "Audience Alignment", "Core Presentation"]
+                },
+                {
+                    num: "03",
+                    phase: "PHASE 03 // GTM STRATEGY",
+                    title: "Develop the GTM Strategy",
+                    desc: "We create the Go-to-Market strategy covering target audience, channels, messaging, customer journey and market approach.",
+                    metrics: ["Channel Strategy", "Messaging Framework", "Customer Journey"]
+                },
+                {
+                    num: "04",
+                    phase: "PHASE 04 // STRATEGIC ROADMAP",
+                    title: "Build the Strategic Roadmap",
+                    desc: "We convert the strategy into a clear roadmap with priorities and actionable steps.",
+                    metrics: ["Priority Mapping", "Actionable Milestones", "Execution Plan"]
+                },
+                {
+                    num: "05",
+                    phase: "PHASE 05 // TEAM EXECUTION",
+                    title: "Execution by Our Team",
+                    desc: "We take the strategy forward through our team and handle the required execution to bring the plan into action.",
+                    metrics: ["Execution by Our Team", "Plan into Action", "Continuous Delivery"]
+                }
+            ]
+        },
+        "digital-automation": {
+            num: "04",
+            tag: "CAPABILITIES // 04",
+            domain: "DIGITAL & AUTOMATION",
+            title: "Digital & Automation <span>Services.</span>",
+            lead: "Build intelligent digital infrastructure, connected workflow automations, and modern customer portals tailored to real business needs.",
+            footerHeading: "Ready to automate and modernize your operations?",
+            footerSub: "Discuss your automation and system requirements directly with our technical team.",
+            steps: [
+                {
+                    num: "01",
+                    phase: "PHASE 01 // WORKFLOW AUTOMATION",
+                    title: "Workflow Automation",
+                    desc: "Automating repetitive business workflows to reduce manual effort and improve efficiency.",
+                    metrics: ["Repetitive Workflows", "Manual Effort Reduction", "Process Efficiency"]
+                },
+                {
+                    num: "02",
+                    phase: "PHASE 02 // PRODUCTION AUTOMATION",
+                    title: "Production Automation",
+                    desc: "Using digital systems and technology to streamline production processes, monitoring and operations.",
+                    metrics: ["Digital Systems", "Process Monitoring", "Streamlined Operations"]
+                },
+                {
+                    num: "03",
+                    phase: "PHASE 03 // AI-POWERED AUTOMATION",
+                    title: "AI-Powered Automation",
+                    desc: "Applying AI to automate tasks, improve decision-making and create smarter business processes.",
+                    metrics: ["AI Automation", "Smart Decision-Making", "Intelligent Processes"]
+                },
+                {
+                    num: "04",
+                    phase: "PHASE 04 // SYSTEM INTEGRATION",
+                    title: "System & Software Integration",
+                    desc: "Connecting different software, platforms and business systems so they work together seamlessly.",
+                    metrics: ["System Integration", "Cross-Platform Sync", "Unified Systems"]
+                },
+                {
+                    num: "05",
+                    phase: "PHASE 05 // DIGITAL PLATFORMS & TOOLS",
+                    title: "Digital Platforms & Tools",
+                    desc: "Designing and implementing digital platforms and tools that support business operations, customers and growth.",
+                    metrics: ["Platform Design", "Operational Tools", "Business Growth"]
+                },
+                {
+                    num: "06",
+                    phase: "PHASE 06 // DIGITAL TRANSFORMATION",
+                    title: "Digital Transformation",
+                    desc: "Modernising business processes, systems and operations through technology to create a more efficient and scalable business",
+                    metrics: ["Modernised Processes", "Technology Modernisation", "Scalable Business"]
+                }
+            ]
+        },
+        "prototyping-systems": {
+            num: "05",
+            tag: "CAPABILITIES // 05",
+            domain: "PROTOTYPING & SYSTEMS",
+            title: "Prototyping & Systems <span>Services.</span>",
+            lead: "Transform concepts and operating models into functional prototypes, scalable architectures, and production-ready business systems.",
+            footerHeading: "Ready to turn ideas into tangible, functioning systems?",
+            footerSub: "Discuss your prototyping and systems requirements directly with our engineering team.",
+            steps: [
+                {
+                    num: "01",
+                    phase: "PHASE 01 // IDEA TO PROTOTYPE",
+                    title: "Idea to Prototype",
+                    desc: "We transform your project idea into a prototype that clearly demonstrates how the concept could work.",
+                    metrics: ["Concept Proof", "Functional Prototype", "Feasibility Showcase"]
+                },
+                {
+                    num: "02",
+                    phase: "PHASE 02 // PROJECT PROTOTYPING",
+                    title: "Project Prototyping",
+                    desc: "We build visual or interactive prototypes to help explain, present and validate your project before development.",
+                    metrics: ["Interactive Models", "Pre-Dev Validation", "Visual Clarification"]
+                },
+                {
+                    num: "03",
+                    phase: "PHASE 03 // PRODUCT & PLATFORMS",
+                    title: "Product & Platform Prototypes",
+                    desc: "We prototype websites, applications, digital platforms and other product concepts.",
+                    metrics: ["Web & App UX", "Platform Prototypes", "Product Concepts"]
+                },
+                {
+                    num: "04",
+                    phase: "PHASE 04 // BUSINESS SYSTEMS",
+                    title: "Business System Prototyping",
+                    desc: "We visualise workflows, processes and systems to show how different parts of the business can work together.",
+                    metrics: ["Workflow Modeling", "Process Architecture", "System Synergy"]
+                },
+                {
+                    num: "05",
+                    phase: "PHASE 05 // CONCEPT VISUALISATION",
+                    title: "Concept Visualisation",
+                    desc: "We turn complex ideas into clear, understandable prototypes that can be presented to teams, clients, partners or investors.",
+                    metrics: ["Stakeholder Alignment", "Investor Pitches", "Concept Clarity"]
+                },
+                {
+                    num: "06",
+                    phase: "PHASE 06 // PROTOTYPE TO DEV",
+                    title: "Prototype to Development",
+                    desc: "Once the concept is validated, the prototype can serve as the foundation for actual development and implementation.",
+                    metrics: ["Validated Foundation", "Development Ready", "Full Implementation"]
+                }
+            ]
+        }
+    };
+
+    let activeServiceKey = "business-development";
+    let previousActiveElement = null;
+
+    const renderServiceBlueprint = (serviceKey) => {
+        const data = serviceBlueprints[serviceKey] || serviceBlueprints["business-development"];
+        activeServiceKey = serviceKey;
+        window.activeBlueprintKey = serviceKey;
+
+        const tagMain = document.getElementById("blueprintTagMain");
+        const tagSub = document.getElementById("blueprintTagSub");
+        const numWatermark = document.getElementById("blueprintNumWatermark");
+        const titleEl = document.getElementById("blueprintDrawerTitle");
+        const leadEl = document.getElementById("blueprintLead");
+        const timelineEl = document.getElementById("blueprintTimeline");
+        const footerHeading = document.getElementById("blueprintFooterHeading");
+        const footerSub = document.getElementById("blueprintFooterSub");
+
+        if (tagMain) tagMain.textContent = data.tag;
+        if (tagSub) tagSub.textContent = data.domain || "SERVICE FRAMEWORK";
+        if (numWatermark) numWatermark.textContent = data.num;
+        if (titleEl) titleEl.innerHTML = data.title;
+        if (leadEl) leadEl.textContent = data.lead;
+        if (footerHeading) footerHeading.textContent = data.footerHeading;
+        if (footerSub) footerSub.textContent = data.footerSub;
+
+        // Rebuild timeline steps exclusively for this domain
+        if (timelineEl) {
+            let html = `
+                <div class="blueprint-spine" aria-hidden="true">
+                    <div class="blueprint-spine-glow"></div>
+                </div>
+            `;
+            data.steps.forEach((step, idx) => {
+                const stepNum = idx + 1;
+                const metricsHtml = step.metrics.map(m => `<span class="metric-pill">${m}</span>`).join("");
+                html += `
+                    <article class="blueprint-step" data-step="${stepNum}">
+                        <div class="blueprint-node">
+                            <span class="blueprint-node-num">${step.num}</span>
+                        </div>
+                        <div class="blueprint-card">
+                            <div class="blueprint-card-head">
+                                <span class="blueprint-phase-pill">${step.phase}</span>
+                                <h3>${step.title}</h3>
+                            </div>
+                            <p>${step.desc}</p>
+                            <div class="blueprint-step-metrics">
+                                ${metricsHtml}
+                            </div>
+                        </div>
+                    </article>
+                `;
+            });
+            timelineEl.innerHTML = html;
+        }
+    };
+
+    const openDrawer = (serviceKey = "business-development", e = null) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        previousActiveElement = document.activeElement;
+
+        // Render exclusively the selected domain's services
+        renderServiceBlueprint(serviceKey);
+
+        overlay.classList.add("is-open");
+        drawer.classList.add("is-open");
+        overlay.setAttribute("aria-hidden", "false");
+        drawer.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+
+        // Auto-focus close button for keyboard accessibility
+        if (closeBtn) {
+            setTimeout(() => closeBtn.focus(), 150);
+        }
+    };
+
+    const closeDrawer = () => {
+        overlay.classList.remove("is-open");
+        drawer.classList.remove("is-open");
+        overlay.setAttribute("aria-hidden", "true");
+        drawer.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+
+        if (previousActiveElement && typeof previousActiveElement.focus === "function") {
+            previousActiveElement.focus();
+        }
+    };
+
+    // Attach trigger clicks (reads exact data-service-key from clicked button)
+    triggers.forEach(trigger => {
+        trigger.addEventListener("click", (e) => {
+            const serviceKey = trigger.getAttribute("data-service-key") || "business-development";
+            openDrawer(serviceKey, e);
+        });
+    });
+
+    if (closeBtn) {
+        closeBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeDrawer();
+        });
+    }
+
+    if (overlay) {
+        overlay.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeDrawer();
+        });
+    }
+
+    if (ctaBtn) {
+        ctaBtn.addEventListener("click", () => {
+            closeDrawer();
+        });
+    }
+
+    // Keyboard ESC key
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && drawer.classList.contains("is-open")) {
+            closeDrawer();
+        }
+    });
+
+    // Expose global helper if needed
+    window.Trigger10xBlueprint = {
+        open: openDrawer,
+        close: closeDrawer,
+        switchService: renderServiceBlueprint
+    };
+
+    /* =========================================================
+       OUR APPROACH & WHAT WE DO REVEAL CONTROLLERS
+       Consistent with Section 01 (About):
+       - Viewport entry reveals
+       - Re-trigger on scroll back up
+       - Navbar navigation instant trigger
+       ========================================================= */
+
+    // APPROACH SECTION CONTROLLER
+    const approachSection = document.getElementById("approach");
+    if (approachSection) {
+        const approachContent = approachSection.querySelector(".approach-content") || approachSection;
+        const approachItems = approachSection.querySelectorAll(".approach-reveal-item");
+        const approachSpine = approachSection.querySelector(".section-left-col");
+        let approachRevealed = false;
+
+        function triggerApproachReveal(forceReset = false) {
+            if (forceReset) {
+                approachRevealed = false;
+                approachItems.forEach(el => el.classList.remove("is-revealed"));
+                if (approachSpine) approachSpine.classList.remove("is-revealed");
+                return;
+            }
+            if (approachRevealed) return;
+            approachRevealed = true;
+
+            setTimeout(() => {
+                if (approachSpine) approachSpine.classList.add("is-revealed");
+            }, 60);
+
+            approachItems.forEach((el, idx) => {
+                setTimeout(() => el.classList.add("is-revealed"), 100 + idx * 110);
+            });
+        }
+
+        const approachObserver = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting && entry.intersectionRatio >= 0.15) {
+                        triggerApproachReveal(false);
+                    } else if (!entry.isIntersecting && entry.boundingClientRect.top > 0) {
+                        triggerApproachReveal(true);
+                    }
+                });
+            },
+            { threshold: [0, 0.15, 0.3], rootMargin: "0px 0px -40px 0px" }
+        );
+        approachObserver.observe(approachContent);
+
+        document.querySelectorAll('a[href="#approach"]').forEach(link => {
+            link.addEventListener("click", () => {
+                triggerApproachReveal(true);
+                setTimeout(() => triggerApproachReveal(false), 300);
+            });
+        });
+    }
+
+    // WHAT WE DO / SERVICES SECTION CONTROLLER
+    const servicesSection = document.getElementById("services");
+    if (servicesSection) {
+        const servicesContent = servicesSection.querySelector(".services-content") || servicesSection;
+        const servicesItems = servicesSection.querySelectorAll(".services-reveal-item");
+        const servicesSpine = servicesSection.querySelector(".section-left-col");
+        let servicesRevealed = false;
+
+        function triggerServicesReveal(forceReset = false) {
+            if (forceReset) {
+                servicesRevealed = false;
+                servicesItems.forEach(el => el.classList.remove("is-revealed"));
+                if (servicesSpine) servicesSpine.classList.remove("is-revealed");
+                return;
+            }
+            if (servicesRevealed) return;
+            servicesRevealed = true;
+
+            setTimeout(() => {
+                if (servicesSpine) servicesSpine.classList.add("is-revealed");
+            }, 60);
+
+            servicesItems.forEach((el, idx) => {
+                setTimeout(() => el.classList.add("is-revealed"), 100 + idx * 110);
+            });
+        }
+
+        const servicesObserver = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting && entry.intersectionRatio >= 0.15) {
+                        triggerServicesReveal(false);
+                    } else if (!entry.isIntersecting && entry.boundingClientRect.top > 0) {
+                        triggerServicesReveal(true);
+                    }
+                });
+            },
+            { threshold: [0, 0.15, 0.3], rootMargin: "0px 0px -40px 0px" }
+        );
+        servicesObserver.observe(servicesContent);
+
+        document.querySelectorAll('a[href="#services"]').forEach(link => {
+            link.addEventListener("click", () => {
+                triggerServicesReveal(true);
+                setTimeout(() => triggerServicesReveal(false), 300);
+            });
+        });
+    }
+
+    // INDUSTRIES SECTION CONTROLLER (04)
+    const industriesSectionEl = document.getElementById("industries");
+    if (industriesSectionEl) {
+        const industriesContent = industriesSectionEl.querySelector(".industries-content") || industriesSectionEl;
+        const industriesItems = industriesSectionEl.querySelectorAll(".industries-reveal-item");
+        const industriesSpine = industriesSectionEl.querySelector(".section-left-col");
+        let industriesRevealed = false;
+
+        function triggerIndustriesReveal(forceReset = false) {
+            if (forceReset) {
+                industriesRevealed = false;
+                industriesItems.forEach(el => el.classList.remove("is-revealed"));
+                if (industriesSpine) industriesSpine.classList.remove("is-revealed");
+                return;
+            }
+            if (industriesRevealed) return;
+            industriesRevealed = true;
+
+            setTimeout(() => {
+                if (industriesSpine) industriesSpine.classList.add("is-revealed");
+            }, 60);
+
+            industriesItems.forEach((el, idx) => {
+                setTimeout(() => el.classList.add("is-revealed"), 100 + idx * 110);
+            });
+        }
+
+        const industriesObserver = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting && entry.intersectionRatio >= 0.15) {
+                        triggerIndustriesReveal(false);
+                    } else if (!entry.isIntersecting && entry.boundingClientRect.top > 0) {
+                        triggerIndustriesReveal(true);
+                    }
+                });
+            },
+            { threshold: [0, 0.15, 0.3], rootMargin: "0px 0px -40px 0px" }
+        );
+        industriesObserver.observe(industriesContent);
+
+        document.querySelectorAll('a[href="#industries"]').forEach(link => {
+            link.addEventListener("click", () => {
+                triggerIndustriesReveal(true);
+                setTimeout(() => triggerIndustriesReveal(false), 300);
+            });
+        });
+    }
+
+    // CONTACT / TURN YOUR POTENTIAL INTO PROGRESS CONTROLLER
+    const contactSectionEl = document.getElementById("contact");
+    if (contactSectionEl) {
+        const contactContent = contactSectionEl.querySelector(".contact-content") || contactSectionEl;
+        const contactItems = contactSectionEl.querySelectorAll(".contact-reveal-item");
+        let contactRevealed = false;
+
+        function triggerContactReveal(forceReset = false) {
+            if (forceReset) {
+                contactRevealed = false;
+                contactItems.forEach(el => el.classList.remove("is-revealed"));
+                return;
+            }
+            if (contactRevealed) return;
+            contactRevealed = true;
+
+            contactItems.forEach((el, idx) => {
+                setTimeout(() => el.classList.add("is-revealed"), 100 + idx * 110);
+            });
+        }
+
+        const contactObserver = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting && entry.intersectionRatio >= 0.15) {
+                        triggerContactReveal(false);
+                    } else if (!entry.isIntersecting && entry.boundingClientRect.top > 0) {
+                        triggerContactReveal(true);
+                    }
+                });
+            },
+            { threshold: [0, 0.15, 0.3], rootMargin: "0px 0px -40px 0px" }
+        );
+        contactObserver.observe(contactContent);
+
+                document.querySelectorAll('a[href="#home"]').forEach(link => {
+            link.addEventListener("click", () => {
+                const heroHome = document.getElementById("home");
+                if (heroHome) {
+                    heroHome.classList.remove("hero-revealed");
+                    setTimeout(() => heroHome.classList.add("hero-revealed"), 150);
+                }
+            });
+        });
+
+        // Ensure hero is revealed on direct visit or if intro is skipped/hidden
+        const heroHomeEl = document.getElementById("home");
+        if (heroHomeEl) {
+            if (!document.body.classList.contains("intro-active")) {
+                heroHomeEl.classList.add("hero-revealed");
+            }
+            setTimeout(() => heroHomeEl.classList.add("hero-revealed"), 400);
+        }
+
+        document.querySelectorAll('a[href="#contact"]').forEach(link => {
+            link.addEventListener("click", () => {
+                triggerContactReveal(true);
+                setTimeout(() => triggerContactReveal(false), 300);
+            });
+        });
+    }
+
+})();
+
+
+/* =========================================================
    WINDOW LOAD
 ========================================================= */
 
@@ -2452,4 +3331,4 @@ window.addEventListener(
     {
         once: true
     }
-);
+);

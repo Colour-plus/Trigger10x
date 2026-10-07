@@ -1,0 +1,9 @@
+{
+  "name": "trigger10x",
+  "version": "1.0.0",
+  "description": "TRIGGER10X Website & Backend",
+  "scripts": {
+    "start": "npm --prefix backend start",
+    "dev": "npm --prefix backend run dev"
+  }
+}
