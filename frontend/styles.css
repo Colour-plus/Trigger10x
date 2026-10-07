@@ -4372,9 +4372,8 @@ body {
         background:
             linear-gradient(
                 90deg,
-                rgba(251,250,247,.36) 0%,
-                rgba(251,250,247,.12) 52%,
-                transparent 100%
+                rgba(251, 250, 247, .05) 0%,
+                transparent 55%
             );
     }
 
@@ -4405,9 +4404,9 @@ body {
         background:
             linear-gradient(
                 180deg,
-                rgba(248,247,243,.88) 0%,
-                rgba(248,247,243,.72) 55%,
-                rgba(248,247,243,.84) 100%
+                rgba(248, 247, 243, .22) 0%,
+                rgba(248, 247, 243, .10) 55%,
+                rgba(248, 247, 243, .18) 100%
             );
     }
 
@@ -8213,9 +8212,9 @@ body.enquiry-open {
     .hero::after {
         background: linear-gradient(
             180deg,
-            rgba(251, 250, 247, 0.76) 0%,
-            rgba(251, 250, 247, 0.6) 45%,
-            rgba(251, 250, 247, 0.88) 100%
+            rgba(251, 250, 247, 0.08) 0%,
+            transparent 50%,
+            rgba(251, 250, 247, 0.16) 100%
         ) !important;
     }
 
