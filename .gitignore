@@ -29,7 +29,10 @@ desktop.ini
 *.sublime-project
 *.sublime-workspace
 
-# Temporary files
+# Temporary & unused media files
 reference_video.mp4
+frontend/assets/hero.mp4
+frontend/assets/hero-video.mp4
+frontend/assets/hero*.jpg
 *.tmp
 *.temp

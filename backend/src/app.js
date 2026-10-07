@@ -52,7 +52,7 @@ const allowedOrigins = [
 if (process.env.FRONTEND_URL) {
     const origins = process.env.FRONTEND_URL
         .split(",")
-        .map((origin) => origin.trim())
+        .map((origin) => origin.trim().replace(/\/$/, ""))
         .filter(Boolean);
 
     allowedOrigins.push(...origins);
@@ -63,17 +63,20 @@ app.use(
         origin: function (origin, callback) {
 
             // Allow requests without an Origin
-            // such as server-to-server requests.
+            // such as server-to-server or same-origin requests.
             if (!origin) {
                 return callback(null, true);
             }
 
-            if (allowedOrigins.includes(origin)) {
+            const cleanOrigin = origin.replace(/\/$/, "");
+
+            if (allowedOrigins.includes(cleanOrigin) || allowedOrigins.includes("*")) {
                 return callback(null, true);
             }
 
+            console.warn(`[CORS] Blocked request from origin: ${origin}. Ensure this domain is included in FRONTEND_URL in .env`);
             return callback(
-                new Error("Not allowed by CORS")
+                new Error(`Not allowed by CORS: Origin ${origin} is not in FRONTEND_URL`)
             );
         },
 
