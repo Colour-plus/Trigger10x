@@ -1,0 +1,23 @@
+# =========================================================
+# TRIGGER10X - HOSTINGER / APACHE CONFIGURATION
+# =========================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Forward /api requests to local Node.js server if running reverse proxy
+    # (Uncomment the line below if Node.js runs locally on port 5000)
+    # RewriteRule ^api/(.*)$ http://127.0.0.1:5000/api/$1 [P,L]
+
+    # 2. Privacy Policy friendly URL
+    RewriteRule ^privacy-policy/?$ frontend/privacy-policy.html [L,QSA]
+
+    # 3. Route root traffic seamlessly to frontend/
+    RewriteCond %{REQUEST_URI} !^/frontend/
+    RewriteCond %{REQUEST_URI} !^/backend/
+    RewriteCond %{REQUEST_URI} !^/api/
+    RewriteRule ^(.*)$ frontend/$1 [L]
+</IfModule>
+
+# Prevent directory browsing
+Options -Indexes

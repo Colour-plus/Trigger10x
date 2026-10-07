@@ -39,4 +39,31 @@ pool.on("error", (err) => {
     console.error("PostgreSQL pool error:", err);
 });
 
+// Auto-initialize table schema if not already present
+const initDbSchema = async () => {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS enquiries (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(150) NOT NULL,
+                company VARCHAR(200),
+                phone VARCHAR(30) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                subject VARCHAR(200) NOT NULL,
+                message TEXT,
+                status VARCHAR(30) NOT NULL DEFAULT 'NEW' CHECK (status IN ('NEW','CONTACTED','IN_PROGRESS','CLOSED')),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_enquiries_created_at ON enquiries(created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_enquiries_status ON enquiries(status);
+        `);
+        console.log("PostgreSQL schema verified: enquiries table is ready.");
+    } catch (err) {
+        console.warn("PostgreSQL schema notice:", err.message);
+    }
+};
+
+initDbSchema();
+
 module.exports = pool;

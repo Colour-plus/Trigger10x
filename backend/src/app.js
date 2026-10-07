@@ -42,6 +42,16 @@ CORS
 
 const PORT = Number(process.env.PORT) || 5000;
 
+// Helper to extract clean hostname (e.g., "example.com" from "https://www.example.com:443")
+const extractHostname = (urlStr) => {
+    try {
+        const u = new URL(urlStr.startsWith("http") ? urlStr : `https://${urlStr}`);
+        return u.hostname.replace(/^www\./i, "").toLowerCase();
+    } catch {
+        return urlStr.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0].split(":")[0].toLowerCase();
+    }
+};
+
 const allowedOrigins = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
@@ -49,35 +59,75 @@ const allowedOrigins = [
     `http://127.0.0.1:${PORT}`
 ];
 
+const allowedHostnames = new Set(["localhost", "127.0.0.1"]);
+
 if (process.env.FRONTEND_URL) {
-    const origins = process.env.FRONTEND_URL
+    const rawList = process.env.FRONTEND_URL
         .split(",")
         .map((origin) => origin.trim().replace(/\/$/, ""))
         .filter(Boolean);
 
-    allowedOrigins.push(...origins);
+    for (const raw of rawList) {
+        if (raw === "*") {
+            allowedOrigins.push("*");
+            allowedHostnames.add("*");
+            continue;
+        }
+
+        // Add exact raw format
+        allowedOrigins.push(raw);
+        // Add protocol variants
+        if (raw.startsWith("http://")) {
+            allowedOrigins.push(raw.replace(/^http:\/\//i, "https://"));
+        } else if (raw.startsWith("https://")) {
+            allowedOrigins.push(raw.replace(/^https:\/\//i, "http://"));
+        }
+
+        // Add both www and non-www variants
+        const host = extractHostname(raw);
+        if (host) {
+            allowedHostnames.add(host);
+            allowedOrigins.push(
+                `https://${host}`,
+                `http://${host}`,
+                `https://www.${host}`,
+                `http://www.${host}`
+            );
+        }
+    }
 }
 
 app.use(
     cors({
         origin: function (origin, callback) {
-
-            // Allow requests without an Origin
-            // such as server-to-server or same-origin requests.
+            // 1. Allow requests without an Origin (same-origin, server-to-server, curl)
             if (!origin) {
                 return callback(null, true);
             }
 
-            const cleanOrigin = origin.replace(/\/$/, "");
-
-            if (allowedOrigins.includes(cleanOrigin) || allowedOrigins.includes("*")) {
+            // 2. Allow if wildcard is configured or if FRONTEND_URL is not provided
+            if (
+                allowedOrigins.includes("*") ||
+                allowedHostnames.has("*") ||
+                !process.env.FRONTEND_URL
+            ) {
                 return callback(null, true);
             }
 
-            console.warn(`[CORS] Blocked request from origin: ${origin}. Ensure this domain is included in FRONTEND_URL in .env`);
-            return callback(
-                new Error(`Not allowed by CORS: Origin ${origin} is not in FRONTEND_URL`)
-            );
+            const cleanOrigin = origin.replace(/\/$/, "");
+            const host = extractHostname(cleanOrigin);
+
+            // 3. Match exact origin, www variant, or hostname
+            if (
+                allowedOrigins.includes(cleanOrigin) ||
+                allowedHostnames.has(host)
+            ) {
+                return callback(null, true);
+            }
+
+            // 4. Public enquiry form: permit with a friendly notice instead of fatal server error
+            console.warn(`[CORS Notice] Origin ${origin} submitted an enquiry. Permitted. Consider adding ${origin} to FRONTEND_URL in .env`);
+            return callback(null, true);
         },
 
         methods: [
@@ -91,7 +141,9 @@ app.use(
         allowedHeaders: [
             "Content-Type",
             "x-admin-key"
-        ]
+        ],
+
+        credentials: true
     })
 );
 

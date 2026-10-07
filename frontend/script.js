@@ -1162,10 +1162,13 @@ if (
 (() => {
 
     // Dynamically target backend whether on port 5000 or port 5500
+    const metaApiUrl = typeof document !== "undefined" ? document.querySelector('meta[name="api-base-url"]')?.getAttribute("content") : null;
     const API_BASE_URL =
-        window.location.port === "5000" || (!window.location.port && window.location.protocol.startsWith("http") && !window.location.hostname.includes("localhost"))
+        (typeof window !== "undefined" && window.TRIGGER10X_API_URL) ||
+        metaApiUrl ||
+        (window.location.port === "5000" || (!window.location.port && window.location.protocol.startsWith("http") && !window.location.hostname.includes("localhost"))
             ? ""
-            : "http://localhost:5000";
+            : "http://localhost:5000");
 
 
     const enquiryForm =
@@ -1477,15 +1480,18 @@ if (
                 }
 
 
-                if (
-                    !response.ok
-                ) {
-
-                    throw new Error(
-                        result.message ||
-                        "Unable to submit your enquiry."
-                    );
-
+                if (!response.ok) {
+                    let errMsg = result.message;
+                    if (!errMsg) {
+                        if (response.status === 404) {
+                            errMsg = "API endpoint not found (404). Please ensure the backend server is running and routing /api.";
+                        } else if (response.status === 500) {
+                            errMsg = "Server error (500). Please check backend database and server logs.";
+                        } else {
+                            errMsg = "Unable to submit your enquiry (Error " + response.status + ").";
+                        }
+                    }
+                    throw new Error(errMsg);
                 }
 
 
