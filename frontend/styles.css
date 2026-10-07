@@ -718,16 +718,16 @@ nav a.active::after {
     font-size: 1.15em;
     letter-spacing: -0.01em;
     display: inline-block;
-    background: linear-gradient(135deg, #b88126 0%, #dfa539 25%, #ffe6a0 48%, #d49a30 75%, #9b6917 100%) !important;
+    background: linear-gradient(135deg, #7c4c06 0%, #b37e1b 25%, #e2aa38 50%, #9e6912 75%, #6e4103 100%) !important;
     background-size: 200% auto !important;
     -webkit-background-clip: text !important;
     background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
-    color: transparent !important;
+    -webkit-text-stroke: 0.6px rgba(60, 36, 4, 0.55);
     padding-right: 6px;
     position: relative;
     animation: goldShimmer 5s ease-in-out infinite;
-    filter: drop-shadow(0 2px 14px rgba(212, 163, 75, 0.45));
+    filter: drop-shadow(0 2px 8px rgba(15, 10, 2, 0.55)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
 }
 
 /* Hero Accent Bar */
@@ -763,8 +763,9 @@ nav a.active::after {
 }
 
 .hero-gold-phrase {
-    color: #a8721c;
-    font-weight: 700;
+    color: #8c5807 !important;
+    font-weight: 800 !important;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.85);
 }
 
 /* Hero Reveal Transitions */
@@ -8218,16 +8219,16 @@ body.enquiry-open {
         overflow-y: auto !important;
     }
 
-    /* 1. HERO VERTICAL FLEX CENTERING (No cutoff, no arbitrary 20% jump) */
+    /* 1. HERO VERTICAL FLEX CENTERING (Balanced visual composition & readable typography) */
     .hero {
         height: auto !important;
         min-height: 100svh !important;
         max-height: none !important;
         display: flex !important;
         flex-direction: column !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
         align-items: flex-start !important;
-        padding: 100px 18px 48px !important;
+        padding: 96px 16px 36px !important;
         position: relative !important;
     }
 
@@ -8236,19 +8237,21 @@ body.enquiry-open {
         inset: 0 !important;
         width: 100% !important;
         height: 100% !important;
-        background-position: 72% center !important;
-        transform: scale(1.03) !important;
+        background-position: 75% 82% !important;
+        transform: scale(1.02) !important;
     }
 
+    /* Soft ambient backlight in the upper sky behind copy */
     .hero::after {
-        background: linear-gradient(
-            180deg,
-            rgba(251, 250, 247, 0.08) 0%,
-            transparent 50%,
-            rgba(251, 250, 247, 0.16) 100%
+        background: radial-gradient(
+            ellipse 95% 70% at 50% 28%,
+            rgba(255, 255, 255, 0.45) 0%,
+            rgba(255, 255, 255, 0.18) 55%,
+            transparent 85%
         ) !important;
     }
 
+    /* Luxury editorial frosted glass card - protects words while keeping scenery fully visible */
     .hero-copy {
         position: relative !important;
         left: auto !important;
@@ -8256,8 +8259,14 @@ body.enquiry-open {
         top: auto !important;
         width: 100% !important;
         max-width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
+        padding: 20px 18px !important;
+        margin: 6px 0 0 0 !important;
+        background: rgba(255, 255, 255, 0.48) !important;
+        backdrop-filter: blur(14px) saturate(160%) !important;
+        -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.65) !important;
+        border-radius: 18px !important;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(198, 155, 85, 0.18) !important;
     }
 
     .hero-eyebrow {
