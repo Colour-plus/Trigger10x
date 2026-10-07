@@ -2,8 +2,11 @@
   "name": "trigger10x",
   "version": "1.0.0",
   "description": "TRIGGER10X Website & Backend",
+  "main": "backend/src/server.js",
   "scripts": {
-    "start": "npm --prefix backend start",
+    "postinstall": "npm --prefix backend install",
+    "build": "npm --prefix backend install",
+    "start": "node backend/src/server.js",
     "dev": "npm --prefix backend run dev"
   }
 }
