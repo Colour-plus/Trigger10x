@@ -246,6 +246,28 @@ app.get(
     }
 );
 
+// Explicit route for SEO Sitemap (Google Search Console)
+app.get(
+    "/sitemap.xml",
+    (req, res) => {
+        res.type("application/xml");
+        res.sendFile(
+            path.join(frontendPath, "sitemap.xml")
+        );
+    }
+);
+
+// Explicit route for Robots.txt
+app.get(
+    "/robots.txt",
+    (req, res) => {
+        res.type("text/plain");
+        res.sendFile(
+            path.join(frontendPath, "robots.txt")
+        );
+    }
+);
+
 
 /*
 ==================================================

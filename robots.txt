@@ -1,0 +1,12 @@
+# =========================================================
+# TRIGGER10X (https://trigger10x.com)
+# Robots.txt for Search Engines & Google Search Console
+# =========================================================
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /backend/
+
+# Primary XML Sitemap Location
+Sitemap: https://trigger10x.com/sitemap.xml
