@@ -250,9 +250,24 @@ app.get(
 app.get(
     "/sitemap.xml",
     (req, res) => {
+        res.set("X-Robots-Tag", "all");
+        res.set("Cache-Control", "public, max-age=3600");
         res.type("application/xml");
         res.sendFile(
             path.join(frontendPath, "sitemap.xml")
+        );
+    }
+);
+
+// Route for Sitemap XSL Stylesheet
+app.get(
+    "/sitemap.xsl",
+    (req, res) => {
+        res.set("X-Robots-Tag", "all");
+        res.set("Cache-Control", "public, max-age=86400");
+        res.type("application/xml");
+        res.sendFile(
+            path.join(frontendPath, "sitemap.xsl")
         );
     }
 );
@@ -261,6 +276,8 @@ app.get(
 app.get(
     "/robots.txt",
     (req, res) => {
+        res.set("X-Robots-Tag", "all");
+        res.set("Cache-Control", "public, max-age=3600");
         res.type("text/plain");
         res.sendFile(
             path.join(frontendPath, "robots.txt")
