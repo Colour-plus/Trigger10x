@@ -252,22 +252,22 @@ app.get(
     (req, res) => {
         res.set("X-Robots-Tag", "all");
         res.set("Cache-Control", "public, max-age=3600");
-        res.type("application/xml");
+        res.set("Content-Type", "application/xml; charset=utf-8");
         res.sendFile(
             path.join(frontendPath, "sitemap.xml")
         );
     }
 );
 
-// Route for Sitemap XSL Stylesheet
+// Fallback Text Sitemap for Search Engines
 app.get(
-    "/sitemap.xsl",
+    "/sitemap.txt",
     (req, res) => {
         res.set("X-Robots-Tag", "all");
-        res.set("Cache-Control", "public, max-age=86400");
-        res.type("application/xml");
+        res.set("Cache-Control", "public, max-age=3600");
+        res.set("Content-Type", "text/plain; charset=utf-8");
         res.sendFile(
-            path.join(frontendPath, "sitemap.xsl")
+            path.join(frontendPath, "sitemap.txt")
         );
     }
 );
@@ -278,7 +278,7 @@ app.get(
     (req, res) => {
         res.set("X-Robots-Tag", "all");
         res.set("Cache-Control", "public, max-age=3600");
-        res.type("text/plain");
+        res.set("Content-Type", "text/plain; charset=utf-8");
         res.sendFile(
             path.join(frontendPath, "robots.txt")
         );

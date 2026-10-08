@@ -8,5 +8,6 @@ Allow: /
 Disallow: /api/
 Disallow: /backend/
 
-# Primary XML Sitemap Location
+# Sitemaps
 Sitemap: https://trigger10x.com/sitemap.xml
+Sitemap: https://trigger10x.com/sitemap.txt
