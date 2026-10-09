@@ -8,6 +8,3 @@ Allow: /
 Disallow: /api/
 Disallow: /backend/
 
-# Sitemaps
-Sitemap: https://trigger10x.com/sitemap.xml
-Sitemap: https://trigger10x.com/sitemap.txt

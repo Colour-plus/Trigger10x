@@ -246,32 +246,6 @@ app.get(
     }
 );
 
-// Explicit route for SEO Sitemap (Google Search Console)
-app.get(
-    "/sitemap.xml",
-    (req, res) => {
-        res.set("X-Robots-Tag", "all");
-        res.set("Cache-Control", "public, max-age=3600");
-        res.set("Content-Type", "application/xml; charset=utf-8");
-        res.sendFile(
-            path.join(frontendPath, "sitemap.xml")
-        );
-    }
-);
-
-// Fallback Text Sitemap for Search Engines
-app.get(
-    "/sitemap.txt",
-    (req, res) => {
-        res.set("X-Robots-Tag", "all");
-        res.set("Cache-Control", "public, max-age=3600");
-        res.set("Content-Type", "text/plain; charset=utf-8");
-        res.sendFile(
-            path.join(frontendPath, "sitemap.txt")
-        );
-    }
-);
-
 // Explicit route for Robots.txt
 app.get(
     "/robots.txt",
@@ -281,6 +255,18 @@ app.get(
         res.set("Content-Type", "text/plain; charset=utf-8");
         res.sendFile(
             path.join(frontendPath, "robots.txt")
+        );
+    }
+);
+
+// Explicit route for Google Search Console Verification
+app.get(
+    "/google67b3ec625ca937cb.html",
+    (req, res) => {
+        res.set("Cache-Control", "no-cache");
+        res.set("Content-Type", "text/html; charset=utf-8");
+        res.sendFile(
+            path.join(frontendPath, "google67b3ec625ca937cb.html")
         );
     }
 );
